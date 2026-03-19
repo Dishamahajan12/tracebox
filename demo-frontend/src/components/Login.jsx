@@ -1,14 +1,17 @@
 import React, { useState } from "react";
 import "./Login.css";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function Login() {
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
+  const [loginMessage, setLoginMessage] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const emailPattern = /^[^ ]+@[^ ]+\.[a-z]{2,3}$/;
@@ -31,8 +34,29 @@ function Login() {
       setPasswordError(false);
     }
 
-    if (valid) {
-      alert("Login successful (validation passed)");
+    if (!valid) return;
+
+    try {
+      const response = await fetch("http://localhost:8081/api/users/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password
+        })
+      });
+
+      const message = await response.text();
+      setLoginMessage(message);
+
+      if (message === "Login successful") {
+        navigate("/home");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setLoginMessage("Error connecting to backend");
     }
   };
 
@@ -85,8 +109,14 @@ function Login() {
           </button>
         </form>
 
+        {loginMessage && (
+          <div className="error-message" style={{ marginTop: "10px" }}>
+            {loginMessage}
+          </div>
+        )}
+
         <div className="forgot">
-          <a href="#">Forgot Password?</a>
+          <Link to="/forgot-password">Forgot Password?</Link>
         </div>
         <div className="bottom-link">
           Don't have an account? <Link to="/Signup">Signup</Link>
