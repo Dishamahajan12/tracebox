@@ -1,0 +1,85 @@
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(22, 53, 44, 0.08);
+  background: rgba(255, 253, 249, 0.84);
+  backdrop-filter: blur(10px);
+}
+
+.leading,
+.trailing,
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.leading h1 {
+  margin: 0.15rem 0 0;
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+  font-size: 1.6rem;
+}
+
+.kicker {
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.profile p {
+  margin: 0.15rem 0 0;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 2.7rem;
+  height: 2.7rem;
+  border-radius: 50%;
+  background: rgba(15, 118, 110, 0.14);
+  color: var(--primary-strong);
+  font-weight: 900;
+}
+
+.menuButton {
+  display: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 0.72rem 1rem;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+@media (max-width: 960px) {
+  .menuButton {
+    display: inline-flex;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .topbar,
+  .leading,
+  .trailing {
+    flex-wrap: wrap;
+  }
+
+  .profile {
+    flex: 1;
+    min-width: 0;
+  }
+}

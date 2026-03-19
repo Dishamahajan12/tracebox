@@ -1,0 +1,35 @@
+.card {
+  display: grid;
+  gap: 0.6rem;
+  padding: 1.35rem;
+  border-radius: 22px;
+  border: 1px solid rgba(22, 53, 44, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: var(--shadow-md);
+}
+
+.label {
+  color: var(--text-soft);
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.value {
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.detail {
+  color: var(--text-soft);
+}
+
+.default {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.highlight {
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.14), rgba(245, 158, 11, 0.12));
+}

@@ -1,0 +1,29 @@
+.empty {
+  display: grid;
+  gap: 0.8rem;
+  justify-items: center;
+  text-align: center;
+  padding: 2rem 1.5rem;
+  border-radius: 22px;
+  border: 1px dashed rgba(15, 118, 110, 0.28);
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.eyebrow {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.empty h3 {
+  margin: 0;
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+}
+
+.empty p {
+  margin: 0;
+  max-width: 48ch;
+  color: var(--text-soft);
+}

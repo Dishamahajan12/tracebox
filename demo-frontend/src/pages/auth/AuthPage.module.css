@@ -1,0 +1,66 @@
+.wrapper {
+  width: min(100%, 480px);
+}
+
+.card {
+  display: grid;
+  gap: 1.3rem;
+  padding: 2rem;
+  border-radius: 28px;
+  background: rgba(255, 253, 249, 0.88);
+  border: 1px solid rgba(22, 53, 44, 0.1);
+  box-shadow: var(--shadow-lg);
+}
+
+.header {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.eyebrow {
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+  font-size: 2rem;
+}
+
+.description {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.form {
+  display: grid;
+  gap: 1rem;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  color: var(--text-soft);
+  font-size: 0.95rem;
+}
+
+.links {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 520px) {
+  .card {
+    padding: 1.5rem;
+  }
+}

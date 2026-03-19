@@ -1,0 +1,13 @@
+.taskLink {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.taskLink strong {
+  color: var(--text);
+}
+
+.form {
+  display: grid;
+  gap: 1rem;
+}
