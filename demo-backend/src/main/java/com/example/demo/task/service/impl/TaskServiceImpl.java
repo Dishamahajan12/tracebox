@@ -3,8 +3,10 @@ package com.example.demo.task.service.impl;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
@@ -26,6 +28,8 @@ import com.example.demo.projectmember.entity.ProjectRole;
 import com.example.demo.projectmember.entity.ProjectTeamRole;
 import com.example.demo.projectmember.repository.ProjectMemberRepository;
 import com.example.demo.task.dto.CreateTaskRequest;
+import com.example.demo.task.dto.DuplicateTicketCheckRequest;
+import com.example.demo.task.dto.DuplicateTicketCheckResponse;
 import com.example.demo.task.dto.TaskAssigneeOptionResponse;
 import com.example.demo.task.dto.TaskAttachmentDownload;
 import com.example.demo.task.dto.TaskAttachmentResponse;
@@ -33,6 +37,7 @@ import com.example.demo.task.dto.TaskHistoryResponse;
 import com.example.demo.task.dto.TaskReferenceDto;
 import com.example.demo.task.dto.TaskResponse;
 import com.example.demo.task.dto.UpdateTaskRequest;
+import com.example.demo.task.config.TaskDuplicateCheckProperties;
 import com.example.demo.task.entity.Task;
 import com.example.demo.task.entity.TaskAttachment;
 import com.example.demo.task.entity.TaskPriority;
@@ -41,6 +46,8 @@ import com.example.demo.task.exception.TaskNotFoundException;
 import com.example.demo.task.repository.TaskAttachmentRepository;
 import com.example.demo.task.repository.TaskHistoryRepository;
 import com.example.demo.task.repository.TaskRepository;
+import com.example.demo.task.service.TaskDuplicateDetectionResult;
+import com.example.demo.task.service.TaskDuplicateDetector;
 import com.example.demo.task.service.TaskHistoryRecorder;
 import com.example.demo.task.service.TaskService;
 import com.example.demo.user.entity.User;
@@ -53,6 +60,11 @@ import jakarta.persistence.criteria.Predicate;
 public class TaskServiceImpl implements TaskService {
 
     private static final String DEFAULT_FILE_CONTENT_TYPE = "application/octet-stream";
+    private static final double LEXICAL_DUPLICATE_THRESHOLD = 0.75;
+    private static final Set<String> DUPLICATE_STOP_WORDS = Set.of(
+            "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "in", "into", "is",
+            "it", "of", "on", "or", "the", "to", "up", "user", "users", "while", "with", "within",
+            "system", "this", "that");
 
     private final TaskRepository taskRepository;
     private final ProjectService projectService;
@@ -62,6 +74,8 @@ public class TaskServiceImpl implements TaskService {
     private final TaskAttachmentRepository taskAttachmentRepository;
     private final TaskHistoryRepository taskHistoryRepository;
     private final TaskHistoryRecorder taskHistoryRecorder;
+    private final TaskDuplicateDetector taskDuplicateDetector;
+    private final TaskDuplicateCheckProperties taskDuplicateCheckProperties;
 
     public TaskServiceImpl(
             TaskRepository taskRepository,
@@ -71,7 +85,9 @@ public class TaskServiceImpl implements TaskService {
             ProjectAuthorizationService projectAuthorizationService,
             TaskAttachmentRepository taskAttachmentRepository,
             TaskHistoryRepository taskHistoryRepository,
-            TaskHistoryRecorder taskHistoryRecorder) {
+            TaskHistoryRecorder taskHistoryRecorder,
+            TaskDuplicateDetector taskDuplicateDetector,
+            TaskDuplicateCheckProperties taskDuplicateCheckProperties) {
         this.taskRepository = taskRepository;
         this.projectService = projectService;
         this.userService = userService;
@@ -80,6 +96,8 @@ public class TaskServiceImpl implements TaskService {
         this.taskAttachmentRepository = taskAttachmentRepository;
         this.taskHistoryRepository = taskHistoryRepository;
         this.taskHistoryRecorder = taskHistoryRecorder;
+        this.taskDuplicateDetector = taskDuplicateDetector;
+        this.taskDuplicateCheckProperties = taskDuplicateCheckProperties;
     }
 
     @Override
@@ -116,6 +134,88 @@ public class TaskServiceImpl implements TaskService {
                 "Ticket " + savedTask.getTicketNumber() + " created");
 
         return DtoMapper.toTaskResponse(savedTask);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DuplicateTicketCheckResponse checkDuplicateTicket(Long projectId, DuplicateTicketCheckRequest request) {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        projectAuthorizationService.requireProjectRole(projectId, currentUserId, ProjectRole.MEMBER);
+        projectService.getRequiredProject(projectId);
+
+        List<Task> candidateTasks = taskRepository.findAll(
+                Specification.where(projectIdEquals(projectId)),
+                PageRequest.of(0, taskDuplicateCheckProperties.getCandidateLimit(), CreatedAtSort.NEWEST.toSort()))
+                .getContent();
+        ensureTicketNumbers(candidateTasks);
+
+        if (candidateTasks.isEmpty()) {
+            return new DuplicateTicketCheckResponse(
+                    true,
+                    false,
+                    null,
+                    null,
+                    taskDuplicateCheckProperties.getThreshold(),
+                    null);
+        }
+
+        Task exactMatchTask = findExactDuplicateCandidate(request, candidateTasks);
+        if (exactMatchTask != null) {
+            return new DuplicateTicketCheckResponse(
+                    true,
+                    true,
+                    buildDuplicateWarningMessage(exactMatchTask),
+                    1.0,
+                    taskDuplicateCheckProperties.getThreshold(),
+                    DtoMapper.toTaskReference(exactMatchTask));
+        }
+
+        LexicalDuplicateMatch lexicalDuplicateMatch = findLexicalDuplicateCandidate(request, candidateTasks);
+        if (lexicalDuplicateMatch != null) {
+            return new DuplicateTicketCheckResponse(
+                    true,
+                    true,
+                    buildDuplicateWarningMessage(lexicalDuplicateMatch.task()),
+                    roundSimilarityScore(lexicalDuplicateMatch.score()),
+                    taskDuplicateCheckProperties.getThreshold(),
+                    DtoMapper.toTaskReference(lexicalDuplicateMatch.task()));
+        }
+
+        TaskDuplicateDetectionResult detectionResult = taskDuplicateDetector.findBestMatch(request, candidateTasks);
+        if (!detectionResult.analysisAvailable()) {
+            return new DuplicateTicketCheckResponse(
+                    false,
+                    false,
+                    "Duplicate check is currently unavailable. You can still create the ticket.",
+                    null,
+                    taskDuplicateCheckProperties.getThreshold(),
+                    null);
+        }
+
+        if (detectionResult.matchedTaskId() == null || detectionResult.similarityScore() == null) {
+            return new DuplicateTicketCheckResponse(
+                    true,
+                    false,
+                    null,
+                    null,
+                    taskDuplicateCheckProperties.getThreshold(),
+                    null);
+        }
+
+        Task matchedTask = candidateTasks.stream()
+                .filter(task -> Objects.equals(task.getId(), detectionResult.matchedTaskId()))
+                .findFirst()
+                .orElse(null);
+        boolean duplicateFound = matchedTask != null
+                && detectionResult.similarityScore() >= taskDuplicateCheckProperties.getThreshold();
+
+        return new DuplicateTicketCheckResponse(
+                true,
+                duplicateFound,
+                duplicateFound ? buildDuplicateWarningMessage(matchedTask) : null,
+                duplicateFound ? roundSimilarityScore(detectionResult.similarityScore()) : null,
+                taskDuplicateCheckProperties.getThreshold(),
+                duplicateFound ? DtoMapper.toTaskReference(matchedTask) : null);
     }
 
     @Override
@@ -491,6 +591,136 @@ public class TaskServiceImpl implements TaskService {
         return "TKT-" + (taskId + 100);
     }
 
+    private Task findExactDuplicateCandidate(DuplicateTicketCheckRequest request, List<Task> candidateTasks) {
+        String normalizedRequestTitle = normalizeDuplicateCheckText(request.title());
+        String normalizedRequestDescription = normalizeDuplicateCheckText(request.description());
+
+        for (Task candidateTask : candidateTasks) {
+            String normalizedCandidateTitle = normalizeDuplicateCheckText(candidateTask.getTitle());
+            if (!normalizedRequestTitle.isBlank() && normalizedRequestTitle.equals(normalizedCandidateTitle)) {
+                return candidateTask;
+            }
+
+            String normalizedCandidateDescription = normalizeDuplicateCheckText(candidateTask.getDescription());
+            if (!normalizedRequestDescription.isBlank()
+                    && normalizedRequestDescription.length() >= 5
+                    && normalizedRequestDescription.equals(normalizedCandidateDescription)) {
+                return candidateTask;
+            }
+        }
+
+        return null;
+    }
+
+    private LexicalDuplicateMatch findLexicalDuplicateCandidate(
+            DuplicateTicketCheckRequest request,
+            List<Task> candidateTasks) {
+        Set<String> requestTitleTokens = tokenizeDuplicateCheckText(request.title());
+        Set<String> requestCombinedTokens = tokenizeDuplicateCheckText(request.title() + " " + request.description());
+
+        LexicalDuplicateMatch bestMatch = null;
+        for (Task candidateTask : candidateTasks) {
+            Set<String> candidateTitleTokens = tokenizeDuplicateCheckText(candidateTask.getTitle());
+            Set<String> candidateCombinedTokens = tokenizeDuplicateCheckText(
+                    candidateTask.getTitle() + " " + candidateTask.getDescription());
+
+            double titleScore = overlapCoefficient(requestTitleTokens, candidateTitleTokens);
+            double combinedScore = overlapCoefficient(requestCombinedTokens, candidateCombinedTokens);
+            double bestScore = Math.max(titleScore, combinedScore);
+
+            if (bestScore < LEXICAL_DUPLICATE_THRESHOLD) {
+                continue;
+            }
+
+            if (bestMatch == null || bestScore > bestMatch.score()) {
+                bestMatch = new LexicalDuplicateMatch(candidateTask, bestScore);
+            }
+        }
+
+        return bestMatch;
+    }
+
+    private String normalizeDuplicateCheckText(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.trim()
+                .toLowerCase()
+                .replaceAll("[^a-z0-9\\s]", " ")
+                .replaceAll("\\s+", " ");
+    }
+
+    private Set<String> tokenizeDuplicateCheckText(String value) {
+        Set<String> tokens = new HashSet<>();
+        String normalizedValue = normalizeDuplicateCheckText(value);
+        if (normalizedValue.isBlank()) {
+            return tokens;
+        }
+
+        for (String token : normalizedValue.split(" ")) {
+            String normalizedToken = normalizeDuplicateToken(token);
+            if (!normalizedToken.isBlank() && !DUPLICATE_STOP_WORDS.contains(normalizedToken)) {
+                tokens.add(normalizedToken);
+            }
+        }
+
+        return tokens;
+    }
+
+    private String normalizeDuplicateToken(String token) {
+        if (token == null || token.isBlank()) {
+            return "";
+        }
+
+        if (token.equals("login")
+                || token.equals("logins")
+                || token.equals("logging")
+                || token.equals("logged")) {
+            return "login";
+        }
+        if (token.equals("signin")
+                || token.equals("signing")
+                || token.equals("signed")
+                || token.equals("signon")) {
+            return "signin";
+        }
+
+        if (token.length() > 4 && token.endsWith("ing")) {
+            return token.substring(0, token.length() - 3);
+        }
+        if (token.length() > 3 && token.endsWith("ed")) {
+            return token.substring(0, token.length() - 2);
+        }
+        if (token.length() > 3 && token.endsWith("s")) {
+            return token.substring(0, token.length() - 1);
+        }
+        return token;
+    }
+
+    private double overlapCoefficient(Set<String> leftTokens, Set<String> rightTokens) {
+        if (leftTokens.isEmpty() || rightTokens.isEmpty()) {
+            return 0.0;
+        }
+
+        long overlapCount = leftTokens.stream()
+                .filter(rightTokens::contains)
+                .count();
+        if (overlapCount < 2) {
+            return 0.0;
+        }
+
+        return (double) overlapCount / Math.min(leftTokens.size(), rightTokens.size());
+    }
+
+    private String buildDuplicateWarningMessage(Task matchedTask) {
+        return "A similar ticket already exists (" + matchedTask.getTicketNumber()
+                + "). Cancel to review it, or Continue to create this ticket and link it in Original Replica.";
+    }
+
+    private double roundSimilarityScore(double similarityScore) {
+        return Math.round(similarityScore * 1000.0) / 1000.0;
+    }
+
     private String valueOrNone(Object value) {
         return value == null ? "None" : value.toString();
     }
@@ -532,5 +762,10 @@ public class TaskServiceImpl implements TaskService {
                             ? "None"
                             : task.getOriginalReplicaTicket().getTicketNumber());
         }
+    }
+
+    private record LexicalDuplicateMatch(
+            Task task,
+            double score) {
     }
 }

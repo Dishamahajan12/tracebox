@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.task.dto.CreateTaskRequest;
+import com.example.demo.task.dto.DuplicateTicketCheckRequest;
+import com.example.demo.task.dto.DuplicateTicketCheckResponse;
 import com.example.demo.task.dto.TaskAssigneeOptionResponse;
 import com.example.demo.task.dto.TaskAttachmentDownload;
 import com.example.demo.task.dto.TaskAttachmentResponse;
@@ -18,6 +20,8 @@ import com.example.demo.task.entity.TaskStatus;
 public interface TaskService {
 
     TaskResponse createTask(Long projectId, CreateTaskRequest request);
+
+    DuplicateTicketCheckResponse checkDuplicateTicket(Long projectId, DuplicateTicketCheckRequest request);
 
     List<TaskResponse> getProjectTasks(Long projectId, String search, String sort, TaskStatus status, Long assigneeId);
 

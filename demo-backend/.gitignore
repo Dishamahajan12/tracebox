@@ -34,3 +34,5 @@ build/
 
 *.log
 .env
+local-ai/**/.venv/
+local-ai/**/__pycache__/

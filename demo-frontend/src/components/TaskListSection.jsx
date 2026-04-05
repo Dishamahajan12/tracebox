@@ -44,6 +44,7 @@ function TaskListSection({
   const [editingTicket, setEditingTicket] = useState(null);
   const [submitError, setSubmitError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
   const [assigneeOption, setAssigneeOption] = useState(null);
   const [linkedTicketOption, setLinkedTicketOption] = useState(null);
   const [originalReplicaOption, setOriginalReplicaOption] = useState(null);
@@ -77,9 +78,47 @@ function TaskListSection({
     setOriginalReplicaOption(null);
   }
 
+  function closeTicketModal() {
+    setIsModalOpen(false);
+    setEditingTicket(null);
+    setSubmitError('');
+    setDuplicateWarning(null);
+    resetTicketForm();
+  }
+
+  function reopenTicketModal() {
+    setDuplicateWarning(null);
+    setIsModalOpen(true);
+  }
+
+  function buildTicketPayload() {
+    return {
+      title: values.title.trim(),
+      description: values.description.trim() || null,
+      priority: values.priority,
+      status: values.status,
+      assigneeId: values.assigneeId ? Number(values.assigneeId) : null,
+      dueDate: values.dueDate || null,
+      linkedTicketId: values.linkedTicketId ? Number(values.linkedTicketId) : null,
+      originalReplicaTicketId: values.originalReplicaTicketId ? Number(values.originalReplicaTicketId) : null,
+    };
+  }
+
+  function formatSimilarityScore(score) {
+    if (typeof score !== 'number' || Number.isNaN(score)) {
+      return '';
+    }
+
+    return new Intl.NumberFormat('en-IN', {
+      style: 'percent',
+      maximumFractionDigits: 1,
+    }).format(score);
+  }
+
   function openCreateModal() {
     setEditingTicket(null);
     setSubmitError('');
+    setDuplicateWarning(null);
     resetTicketForm();
     setIsModalOpen(true);
   }
@@ -87,6 +126,7 @@ function TaskListSection({
   function openEditModal(ticket) {
     setEditingTicket(ticket);
     setSubmitError('');
+    setDuplicateWarning(null);
     setValues({
       title: ticket.title || '',
       description: ticket.description || '',
@@ -111,32 +151,70 @@ function TaskListSection({
       return;
     }
 
-    const payload = {
-      title: values.title.trim(),
-      description: values.description.trim() || null,
-      priority: values.priority,
-      status: values.status,
-      assigneeId: values.assigneeId ? Number(values.assigneeId) : null,
-      dueDate: values.dueDate || null,
-      linkedTicketId: values.linkedTicketId ? Number(values.linkedTicketId) : null,
-      originalReplicaTicketId: values.originalReplicaTicketId ? Number(values.originalReplicaTicketId) : null,
-    };
+    const payload = buildTicketPayload();
+
+    try {
+      setSubmitting(true);
+      setSubmitError('');
+      setDuplicateWarning(null);
+
+      if (editingTicket) {
+        await onUpdateTicket(editingTicket.id, payload);
+      } else {
+        try {
+          const duplicateCheckResponse = await ticketService.duplicateCheckTicket(projectId, {
+            title: payload.title,
+            description: values.description.trim(),
+          });
+
+          if (
+            duplicateCheckResponse?.analysisAvailable &&
+            duplicateCheckResponse?.duplicateFound &&
+            duplicateCheckResponse?.matchedTicket?.id
+          ) {
+            setDuplicateWarning({
+              matchedTicket: duplicateCheckResponse.matchedTicket,
+              payload,
+              similarityScore: duplicateCheckResponse.similarityScore,
+              warningMessage: duplicateCheckResponse.warningMessage,
+            });
+            setIsModalOpen(false);
+            return;
+          }
+        } catch (duplicateCheckError) {
+          // Duplicate analysis should never block normal ticket creation.
+        }
+
+        await onCreateTicket(payload);
+      }
+
+      closeTicketModal();
+    } catch (submitLoadError) {
+      setSubmitError(submitLoadError.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleDuplicateContinue() {
+    if (!duplicateWarning?.matchedTicket?.id) {
+      reopenTicketModal();
+      return;
+    }
 
     try {
       setSubmitting(true);
       setSubmitError('');
 
-      if (editingTicket) {
-        await onUpdateTicket(editingTicket.id, payload);
-      } else {
-        await onCreateTicket(payload);
-      }
+      await onCreateTicket({
+        ...duplicateWarning.payload,
+        originalReplicaTicketId: duplicateWarning.matchedTicket.id,
+      });
 
-      setIsModalOpen(false);
-      resetTicketForm();
-      setEditingTicket(null);
+      closeTicketModal();
     } catch (submitLoadError) {
       setSubmitError(submitLoadError.message);
+      reopenTicketModal();
     } finally {
       setSubmitting(false);
     }
@@ -364,6 +442,42 @@ function TaskListSection({
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        description="An existing ticket looks similar to the one you are creating."
+        isOpen={Boolean(duplicateWarning)}
+        onClose={reopenTicketModal}
+        showCloseButton={false}
+        title="Possible Duplicate Ticket"
+      >
+        <div className={styles.duplicateWarning}>
+          <p className={styles.duplicateWarningMessage}>
+            {duplicateWarning?.warningMessage || 'This ticket appears similar to an existing ticket.'}
+          </p>
+
+          {duplicateWarning?.matchedTicket ? (
+            <div className={styles.duplicateTicketCard}>
+              <span className={styles.ticketNumber}>{getTicketNumber(duplicateWarning.matchedTicket)}</span>
+              <strong>{duplicateWarning.matchedTicket.title || 'Untitled ticket'}</strong>
+              <div className={styles.duplicateTicketMeta}>
+                <StatusBadge value={duplicateWarning.matchedTicket.status} />
+                {formatSimilarityScore(duplicateWarning.similarityScore) ? (
+                  <span className="pill-note">{formatSimilarityScore(duplicateWarning.similarityScore)} similar</span>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="form-actions">
+            <Button disabled={submitting} onClick={reopenTicketModal} type="button" variant="ghost">
+              Cancel
+            </Button>
+            <Button loading={submitting} onClick={handleDuplicateContinue} type="button">
+              Continue
+            </Button>
+          </div>
+        </div>
       </Modal>
     </section>
   );

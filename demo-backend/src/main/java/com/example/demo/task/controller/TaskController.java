@@ -18,6 +18,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.common.response.ApiResponse;
 import com.example.demo.task.dto.CreateTaskRequest;
+import com.example.demo.task.dto.DuplicateTicketCheckRequest;
+import com.example.demo.task.dto.DuplicateTicketCheckResponse;
 import com.example.demo.task.dto.TaskAssigneeOptionResponse;
 import com.example.demo.task.dto.TaskAttachmentDownload;
 import com.example.demo.task.dto.TaskAttachmentResponse;
@@ -45,6 +47,15 @@ public class TaskController {
             @Valid @RequestBody CreateTaskRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Ticket created successfully", taskService.createTask(projectId, request)));
+    }
+
+    @PostMapping({ "/api/projects/{projectId}/tasks/duplicate-check", "/api/projects/{projectId}/tickets/duplicate-check" })
+    public ResponseEntity<ApiResponse<DuplicateTicketCheckResponse>> checkDuplicateTicket(
+            @PathVariable Long projectId,
+            @Valid @RequestBody DuplicateTicketCheckRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Duplicate ticket check completed successfully",
+                taskService.checkDuplicateTicket(projectId, request)));
     }
 
     @GetMapping({ "/api/projects/{projectId}/tasks", "/api/projects/{projectId}/tickets" })

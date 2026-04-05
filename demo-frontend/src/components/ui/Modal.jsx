@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import Button from './Button';
 import styles from './Modal.module.css';
 
-function Modal({ isOpen, onClose, title, description, children }) {
+function Modal({ isOpen, onClose, title, description, children, showCloseButton = true }) {
   useEffect(() => {
     if (!isOpen) {
       return undefined;
@@ -42,9 +42,11 @@ function Modal({ isOpen, onClose, title, description, children }) {
             <h2>{title}</h2>
             {description ? <p>{description}</p> : null}
           </div>
-          <Button aria-label="Close modal" onClick={onClose} size="sm" variant="ghost">
-            Close
-          </Button>
+          {showCloseButton ? (
+            <Button aria-label="Close modal" onClick={onClose} size="sm" variant="ghost">
+              Close
+            </Button>
+          ) : null}
         </div>
         <div className={styles.body}>{children}</div>
       </div>

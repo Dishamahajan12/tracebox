@@ -20,6 +20,11 @@ export const ticketService = {
     return unwrapData(response);
   },
 
+  async duplicateCheckTicket(projectId, payload) {
+    const response = await httpClient.post(`/api/projects/${projectId}/tickets/duplicate-check`, payload);
+    return unwrapData(response);
+  },
+
   async getTicket(ticketId) {
     const response = await httpClient.get(`/api/tickets/${ticketId}`);
     return unwrapData(response);
