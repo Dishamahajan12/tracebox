@@ -29,6 +29,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public UserResponse getUserProfile(Long userId) {
+        return DtoMapper.toUserResponse(getRequiredUser(userId));
+    }
+
+    @Override
     public UserResponse updateCurrentUser(UpdateUserRequest request) {
         User user = getRequiredUser(SecurityUtils.getCurrentUserId());
         user.setFullName(request.fullName().trim());

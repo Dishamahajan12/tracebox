@@ -8,6 +8,7 @@ import NotFoundPage from '../pages/NotFoundPage';
 import ProfilePage from '../pages/ProfilePage';
 import ProjectDetailsPage from '../pages/ProjectDetailsPage';
 import ProjectsPage from '../pages/ProjectsPage';
+import ReportDetailsPage from '../pages/ReportDetailsPage';
 import TaskDetailsPage from '../pages/TaskDetailsPage';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import AdminUsersPage from '../pages/admin/AdminUsersPage';
@@ -49,7 +50,18 @@ function AppRoutes() {
           <Route element={<DashboardPage />} path="/dashboard" />
           <Route element={<ProjectsPage />} path="/projects" />
           <Route element={<ProjectDetailsPage />} path="/projects/:projectId" />
-          <Route element={<TaskDetailsPage />} path="/tasks/:taskId" />
+          <Route element={<ProjectDetailsPage workspaceSection="members" />} path="/projects/:projectId/members" />
+          <Route element={<ProjectDetailsPage workspaceSection="tickets" />} path="/projects/:projectId/tickets" />
+          <Route element={<ProjectDetailsPage workspaceSection="reports" />} path="/projects/:projectId/reports" />
+          <Route element={<TaskDetailsPage />} path="/tickets/:ticketId" />
+          <Route element={<TaskDetailsPage workspaceSection="files" />} path="/tickets/:ticketId/files" />
+          <Route element={<TaskDetailsPage workspaceSection="duplicates" />} path="/tickets/:ticketId/duplicates" />
+          <Route element={<TaskDetailsPage workspaceSection="history" />} path="/tickets/:ticketId/history" />
+          <Route element={<TaskDetailsPage />} path="/tasks/:ticketId" />
+          <Route element={<TaskDetailsPage workspaceSection="files" />} path="/tasks/:ticketId/files" />
+          <Route element={<TaskDetailsPage workspaceSection="duplicates" />} path="/tasks/:ticketId/duplicates" />
+          <Route element={<TaskDetailsPage workspaceSection="history" />} path="/tasks/:ticketId/history" />
+          <Route element={<ReportDetailsPage />} path="/reports/:reportId" />
           <Route element={<ProfilePage />} path="/profile" />
         </Route>
       </Route>

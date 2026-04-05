@@ -6,6 +6,11 @@ export const userService = {
     return unwrapData(response);
   },
 
+  async getUser(userId) {
+    const response = await httpClient.get(`/api/users/${userId}`);
+    return unwrapData(response);
+  },
+
   async updateCurrentUser(payload) {
     const response = await httpClient.put('/api/users/me', payload);
     return unwrapData(response);

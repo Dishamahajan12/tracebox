@@ -9,7 +9,9 @@ import com.example.demo.user.dto.UserSummaryDto;
 
 public record TaskResponse(
         Long id,
+        String ticketNumber,
         Long projectId,
+        String projectName,
         String title,
         String description,
         TaskStatus status,
@@ -17,6 +19,8 @@ public record TaskResponse(
         LocalDate dueDate,
         UserSummaryDto createdBy,
         UserSummaryDto assignee,
+        TaskReferenceDto linkedTicket,
+        TaskReferenceDto originalReplicaTicket,
         Instant createdAt,
         Instant updatedAt) {
 }

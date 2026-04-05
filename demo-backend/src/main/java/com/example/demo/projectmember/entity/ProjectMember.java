@@ -41,13 +41,22 @@ public class ProjectMember extends BaseAuditEntity {
     @Column(nullable = false, length = 50)
     private ProjectRole projectRole;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "team_role", length = 50)
+    private ProjectTeamRole teamRole;
+
     public ProjectMember() {
     }
 
     public ProjectMember(Project project, User user, ProjectRole projectRole) {
+        this(project, user, projectRole, ProjectTeamRole.defaultForAccessRole(projectRole));
+    }
+
+    public ProjectMember(Project project, User user, ProjectRole projectRole, ProjectTeamRole teamRole) {
         this.project = project;
         this.user = user;
         this.projectRole = projectRole;
+        this.teamRole = teamRole;
     }
 
     public Long getId() {
@@ -76,5 +85,17 @@ public class ProjectMember extends BaseAuditEntity {
 
     public void setProjectRole(ProjectRole projectRole) {
         this.projectRole = projectRole;
+    }
+
+    public ProjectTeamRole getTeamRole() {
+        return teamRole == null ? ProjectTeamRole.defaultForAccessRole(projectRole) : teamRole;
+    }
+
+    public ProjectTeamRole getStoredTeamRole() {
+        return teamRole;
+    }
+
+    public void setTeamRole(ProjectTeamRole teamRole) {
+        this.teamRole = teamRole;
     }
 }

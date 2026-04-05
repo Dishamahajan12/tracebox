@@ -8,6 +8,8 @@ public interface UserService {
 
     UserResponse getCurrentUser();
 
+    UserResponse getUserProfile(Long userId);
+
     UserResponse updateCurrentUser(UpdateUserRequest request);
 
     User getRequiredUser(Long userId);

@@ -3,12 +3,14 @@ package com.example.demo.projectmember.dto;
 import java.time.Instant;
 
 import com.example.demo.projectmember.entity.ProjectRole;
+import com.example.demo.projectmember.entity.ProjectTeamRole;
 import com.example.demo.user.dto.UserSummaryDto;
 
 public record ProjectMemberResponse(
         Long id,
         Long projectId,
         UserSummaryDto user,
-        ProjectRole projectRole,
+        ProjectTeamRole projectRole,
+        ProjectRole accessRole,
         Instant createdAt) {
 }

@@ -1,0 +1,45 @@
+.trigger {
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.trigger:hover {
+  color: var(--primary-strong);
+}
+
+.loadingState {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+}
+
+.profileCard {
+  display: grid;
+  gap: 1rem;
+}
+
+.header {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.headerText {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.headerText h3,
+.headerText p {
+  margin: 0;
+}
+
+.headerText p {
+  color: var(--text-soft);
+}

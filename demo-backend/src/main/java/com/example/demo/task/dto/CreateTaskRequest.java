@@ -10,8 +10,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record CreateTaskRequest(
-        @NotBlank(message = "Task title is required")
-        @Size(max = 160, message = "Task title must be at most 160 characters")
+        @NotBlank(message = "Ticket title is required")
+        @Size(max = 160, message = "Ticket title must be at most 160 characters")
         String title,
         @Size(max = 4000, message = "Description must be at most 4000 characters")
         String description,
@@ -19,5 +19,7 @@ public record CreateTaskRequest(
         TaskPriority priority,
         TaskStatus status,
         Long assigneeId,
-        LocalDate dueDate) {
+        LocalDate dueDate,
+        Long linkedTicketId,
+        Long originalReplicaTicketId) {
 }

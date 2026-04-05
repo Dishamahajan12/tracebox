@@ -7,6 +7,10 @@ const PROJECT_ROLE_ORDER = {
   PROJECT_OWNER: 4,
 };
 
+export function isProjectAccessRole(value) {
+  return Object.prototype.hasOwnProperty.call(PROJECT_ROLE_ORDER, value);
+}
+
 export function hasAdminAccess(user) {
   return ADMIN_ROLES.includes(user?.role);
 }
@@ -33,7 +37,7 @@ export function resolveProjectRole(project, members = [], user) {
   }
 
   const membership = members.find((member) => member?.user?.id === user?.id);
-  return membership?.projectRole || null;
+  return membership?.accessRole || (isProjectAccessRole(membership?.projectRole) ? membership?.projectRole : null);
 }
 
 export function canModerateComment(comment, currentUser, projectRole) {

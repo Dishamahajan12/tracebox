@@ -7,9 +7,8 @@ import com.example.demo.project.entity.Project;
 import com.example.demo.user.entity.User;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -29,14 +28,17 @@ public class Task extends BaseAuditEntity {
     @Column(nullable = false, length = 160)
     private String title;
 
+    @Column(name = "ticket_number", length = 30, unique = true)
+    private String ticketNumber;
+
     @Column(length = 4000)
     private String description;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = TaskStatusConverter.class)
     @Column(nullable = false, length = 50)
-    private TaskStatus status = TaskStatus.TODO;
+    private TaskStatus status = TaskStatus.NEW;
 
-    @Enumerated(EnumType.STRING)
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
     @Column(nullable = false, length = 50)
     private TaskPriority priority = TaskPriority.MEDIUM;
 
@@ -55,6 +57,14 @@ public class Task extends BaseAuditEntity {
     @JoinColumn(name = "assignee_id")
     private User assignee;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "linked_ticket_id")
+    private Task linkedTicket;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "original_replica_ticket_id")
+    private Task originalReplicaTicket;
+
     public Task() {
     }
 
@@ -68,6 +78,18 @@ public class Task extends BaseAuditEntity {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getTicketNumber() {
+        return ticketNumber == null && id != null ? "TKT-" + (id + 100) : ticketNumber;
+    }
+
+    public String getStoredTicketNumber() {
+        return ticketNumber;
+    }
+
+    public void setTicketNumber(String ticketNumber) {
+        this.ticketNumber = ticketNumber;
     }
 
     public String getDescription() {
@@ -124,5 +146,21 @@ public class Task extends BaseAuditEntity {
 
     public void setAssignee(User assignee) {
         this.assignee = assignee;
+    }
+
+    public Task getLinkedTicket() {
+        return linkedTicket;
+    }
+
+    public void setLinkedTicket(Task linkedTicket) {
+        this.linkedTicket = linkedTicket;
+    }
+
+    public Task getOriginalReplicaTicket() {
+        return originalReplicaTicket;
+    }
+
+    public void setOriginalReplicaTicket(Task originalReplicaTicket) {
+        this.originalReplicaTicket = originalReplicaTicket;
     }
 }

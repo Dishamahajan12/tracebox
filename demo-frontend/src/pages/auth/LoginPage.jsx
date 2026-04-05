@@ -59,7 +59,7 @@ function LoginPage() {
         <div className={styles.header}>
           <span className={styles.eyebrow}>Welcome back</span>
           <h2 className={styles.title}>Sign in to TraceBox</h2>
-          <p className={styles.description}>Pick up your projects, tasks, and team updates right where you left them.</p>
+          <p className={styles.description}>Pick up your projects, tickets, and team updates right where you left them.</p>
         </div>
 
         {submitError ? <div className="inline-message inline-message--error">{submitError}</div> : null}

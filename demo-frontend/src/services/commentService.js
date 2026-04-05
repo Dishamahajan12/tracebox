@@ -1,13 +1,25 @@
 import { httpClient, unwrapData } from './http';
 
+function buildParams(filters = {}) {
+  return Object.fromEntries(
+    Object.entries(filters).filter(([, value]) => value !== undefined && value !== null && value !== ''),
+  );
+}
+
 export const commentService = {
-  async getTaskComments(taskId) {
-    const response = await httpClient.get(`/api/tasks/${taskId}/comments`);
+  async getTicketComments(ticketId, filters = {}) {
+    const response = await httpClient.get(`/api/tickets/${ticketId}/comments`, {
+      params: buildParams(filters),
+    });
     return unwrapData(response);
   },
 
-  async createComment(taskId, payload) {
-    const response = await httpClient.post(`/api/tasks/${taskId}/comments`, payload);
+  async getTaskComments(taskId, filters = {}) {
+    return this.getTicketComments(taskId, filters);
+  },
+
+  async createComment(ticketId, payload) {
+    const response = await httpClient.post(`/api/tickets/${ticketId}/comments`, payload);
     return unwrapData(response);
   },
 

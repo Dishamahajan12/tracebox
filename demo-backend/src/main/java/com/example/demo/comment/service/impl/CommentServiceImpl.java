@@ -14,10 +14,12 @@ import com.example.demo.comment.entity.Comment;
 import com.example.demo.comment.exception.CommentNotFoundException;
 import com.example.demo.comment.repository.CommentRepository;
 import com.example.demo.comment.service.CommentService;
+import com.example.demo.common.model.CreatedAtSort;
 import com.example.demo.common.security.SecurityUtils;
 import com.example.demo.common.util.DtoMapper;
 import com.example.demo.projectmember.entity.ProjectRole;
 import com.example.demo.task.entity.Task;
+import com.example.demo.task.service.TaskHistoryRecorder;
 import com.example.demo.task.service.TaskService;
 import com.example.demo.user.entity.User;
 import com.example.demo.user.service.UserService;
@@ -31,27 +33,30 @@ public class CommentServiceImpl implements CommentService {
     private final UserService userService;
     private final ProjectAuthorizationService projectAuthorizationService;
     private final AccessDecisionService accessDecisionService;
+    private final TaskHistoryRecorder taskHistoryRecorder;
 
     public CommentServiceImpl(
             CommentRepository commentRepository,
             TaskService taskService,
             UserService userService,
             ProjectAuthorizationService projectAuthorizationService,
-            AccessDecisionService accessDecisionService) {
+            AccessDecisionService accessDecisionService,
+            TaskHistoryRecorder taskHistoryRecorder) {
         this.commentRepository = commentRepository;
         this.taskService = taskService;
         this.userService = userService;
         this.projectAuthorizationService = projectAuthorizationService;
         this.accessDecisionService = accessDecisionService;
+        this.taskHistoryRecorder = taskHistoryRecorder;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<CommentResponse> getTaskComments(Long taskId) {
+    public List<CommentResponse> getTaskComments(Long taskId, String sort) {
         Long currentUserId = SecurityUtils.getCurrentUserId();
         Task task = taskService.getRequiredTask(taskId);
         projectAuthorizationService.requireProjectRole(task.getProject().getId(), currentUserId, ProjectRole.VIEWER);
-        return commentRepository.findAllByTaskIdOrderByCreatedAtAsc(taskId).stream()
+        return commentRepository.findAllByTaskId(taskId, CreatedAtSort.from(sort).toSort()).stream()
                 .map(DtoMapper::toCommentResponse)
                 .toList();
     }
@@ -67,7 +72,9 @@ public class CommentServiceImpl implements CommentService {
         comment.setTask(task);
         comment.setAuthor(author);
         comment.setContent(request.content().trim());
-        return DtoMapper.toCommentResponse(commentRepository.save(comment));
+        Comment savedComment = commentRepository.save(comment);
+        taskHistoryRecorder.record(task, author, "COMMENT_ADDED", "Comment added to ticket");
+        return DtoMapper.toCommentResponse(savedComment);
     }
 
     @Override
@@ -79,7 +86,13 @@ public class CommentServiceImpl implements CommentService {
         accessDecisionService.requireCommentModificationAccess(projectId, currentUserId, comment.getAuthor().getId());
 
         comment.setContent(request.content().trim());
-        return DtoMapper.toCommentResponse(commentRepository.save(comment));
+        Comment savedComment = commentRepository.save(comment);
+        taskHistoryRecorder.record(
+                comment.getTask(),
+                userService.getRequiredUser(currentUserId),
+                "COMMENT_UPDATED",
+                "Comment updated");
+        return DtoMapper.toCommentResponse(savedComment);
     }
 
     @Override
@@ -89,6 +102,11 @@ public class CommentServiceImpl implements CommentService {
         Long projectId = comment.getTask().getProject().getId();
         projectAuthorizationService.requireProjectRole(projectId, currentUserId, ProjectRole.MEMBER);
         accessDecisionService.requireCommentModificationAccess(projectId, currentUserId, comment.getAuthor().getId());
+        taskHistoryRecorder.record(
+                comment.getTask(),
+                userService.getRequiredUser(currentUserId),
+                "COMMENT_DELETED",
+                "Comment deleted");
         commentRepository.delete(comment);
     }
 

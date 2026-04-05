@@ -6,19 +6,19 @@ function resolveTone(value) {
     return 'neutral';
   }
 
-  if (['DONE', 'ACTIVE', 'PROJECT_OWNER', 'SUPER_ADMIN'].includes(value)) {
+  if (['DONE', 'COMPLETED', 'ACTIVE', 'PROJECT_OWNER', 'SUPER_ADMIN'].includes(value)) {
     return 'success';
   }
 
-  if (['IN_PROGRESS', 'PROJECT_ADMIN', 'ADMIN'].includes(value)) {
+  if (['IN_PROGRESS', 'PROJECT_ADMIN', 'ADMIN', 'MANAGER'].includes(value)) {
     return 'info';
   }
 
-  if (['HIGH', 'CRITICAL', 'ARCHIVED'].includes(value)) {
+  if (['HIGH', 'CRITICAL', 'ARCHIVED', 'SENIOR_MANAGER'].includes(value)) {
     return 'danger';
   }
 
-  if (['IN_REVIEW', 'MEDIUM', 'MEMBER'].includes(value)) {
+  if (['IN_REVIEW', 'MEDIUM', 'MEMBER', 'TESTER'].includes(value)) {
     return 'warning';
   }
 

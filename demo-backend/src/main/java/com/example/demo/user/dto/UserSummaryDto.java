@@ -6,5 +6,6 @@ public record UserSummaryDto(
         Long id,
         String fullName,
         String email,
-        RoleName role) {
+        RoleName role,
+        String profileUrl) {
 }

@@ -11,6 +11,7 @@ import TextAreaField from '../components/ui/TextAreaField';
 import { useFormFields } from '../hooks/useFormFields';
 import { useToast } from '../hooks/useToast';
 import { projectService } from '../services/projectService';
+import { getApiErrorMessage } from '../utils/errors';
 import { formatDateTime, sanitizeProjectKey } from '../utils/formatters';
 
 const initialProjectState = {
@@ -45,7 +46,7 @@ function ProjectsPage() {
         }
       } catch (loadError) {
         if (isMounted) {
-          setError(loadError.message || 'Unable to load projects.');
+          setError(getApiErrorMessage(loadError, 'Unable to load projects.'));
         }
       } finally {
         if (isMounted) {
@@ -93,10 +94,10 @@ function ProjectsPage() {
       setProjects((currentProjects) => [createdProject, ...currentProjects]);
       setIsModalOpen(false);
       resetForm(initialProjectState);
-      showSuccess('Project created', 'Your new project is ready for tasks and members.');
+      showSuccess('Project created', 'Your new project is ready for tickets, reports, and members.');
       navigate(`/projects/${createdProject.id}`);
     } catch (submitLoadError) {
-      setSubmitError(submitLoadError.message || 'Unable to create project.');
+      setSubmitError(getApiErrorMessage(submitLoadError, 'Unable to create project.'));
     } finally {
       setSubmitting(false);
     }

@@ -8,7 +8,7 @@ import com.example.demo.comment.dto.UpdateCommentRequest;
 
 public interface CommentService {
 
-    List<CommentResponse> getTaskComments(Long taskId);
+    List<CommentResponse> getTaskComments(Long taskId, String sort);
 
     CommentResponse addComment(Long taskId, CreateCommentRequest request);
 

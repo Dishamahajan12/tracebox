@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.comment.dto.CommentResponse;
@@ -29,12 +30,16 @@ public class CommentController {
         this.commentService = commentService;
     }
 
-    @GetMapping("/api/tasks/{taskId}/comments")
-    public ResponseEntity<ApiResponse<List<CommentResponse>>> getTaskComments(@PathVariable Long taskId) {
-        return ResponseEntity.ok(ApiResponse.success("Comments fetched successfully", commentService.getTaskComments(taskId)));
+    @GetMapping({ "/api/tasks/{taskId}/comments", "/api/tickets/{taskId}/comments" })
+    public ResponseEntity<ApiResponse<List<CommentResponse>>> getTaskComments(
+            @PathVariable Long taskId,
+            @RequestParam(required = false) String sort) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Comments fetched successfully",
+                commentService.getTaskComments(taskId, sort)));
     }
 
-    @PostMapping("/api/tasks/{taskId}/comments")
+    @PostMapping({ "/api/tasks/{taskId}/comments", "/api/tickets/{taskId}/comments" })
     public ResponseEntity<ApiResponse<CommentResponse>> addComment(
             @PathVariable Long taskId,
             @Valid @RequestBody CreateCommentRequest request) {

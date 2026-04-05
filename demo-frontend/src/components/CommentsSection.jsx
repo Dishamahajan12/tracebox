@@ -1,12 +1,25 @@
 import { useState } from 'react';
 import Button from './ui/Button';
 import EmptyState from './ui/EmptyState';
+import SelectField from './ui/SelectField';
 import TextAreaField from './ui/TextAreaField';
+import UserProfileTrigger from './UserProfileTrigger';
 import { canModerateComment } from '../utils/permissions';
 import { formatDateTime, initialsFromName } from '../utils/formatters';
+import { SORT_ORDER_OPTIONS } from '../utils/constants';
 import styles from './CommentsSection.module.css';
 
-function CommentsSection({ comments, currentUser, projectRole, onCreateComment, onUpdateComment, onDeleteComment }) {
+function CommentsSection({
+  comments,
+  currentUser,
+  projectRole,
+  onCreateComment,
+  onUpdateComment,
+  onDeleteComment,
+  sortOrder,
+  onSortChange,
+  loading,
+}) {
   const [newComment, setNewComment] = useState('');
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingContent, setEditingContent] = useState('');
@@ -72,7 +85,19 @@ function CommentsSection({ comments, currentUser, projectRole, onCreateComment, 
       <div className="section-header">
         <div>
           <h2>Comments</h2>
-          <p>Capture decisions, unblock teammates, and keep task discussion close to the work.</p>
+          <p>Capture decisions, unblock teammates, and keep ticket discussion close to the work.</p>
+        </div>
+        <div className={styles.sortControl}>
+          <SelectField
+            label="Sort"
+            name="commentSort"
+            onChange={(event) => onSortChange(event.target.value)}
+            options={SORT_ORDER_OPTIONS.map((sort) => ({
+              label: sort === 'NEWEST' ? 'Newest First' : 'Oldest First',
+              value: sort,
+            }))}
+            value={sortOrder}
+          />
         </div>
       </div>
 
@@ -96,9 +121,11 @@ function CommentsSection({ comments, currentUser, projectRole, onCreateComment, 
         </form>
       ) : null}
 
-      {!comments.length ? (
+      {loading ? (
+        <div className="inline-message">Loading comments...</div>
+      ) : !comments.length ? (
         <EmptyState
-          description="Comments added here will stay visible inside the task detail view for the whole project team."
+          description="Comments added here stay visible inside the ticket detail view for the whole project team."
           title="No discussion yet"
         />
       ) : (
@@ -114,7 +141,7 @@ function CommentsSection({ comments, currentUser, projectRole, onCreateComment, 
                   <div className="media-row">
                     <span className="avatar-chip">{initialsFromName(comment.author?.fullName)}</span>
                     <div>
-                      <strong>{comment.author?.fullName}</strong>
+                      <UserProfileTrigger user={comment.author}>{comment.author?.fullName || 'Unknown user'}</UserProfileTrigger>
                       <div className="comment-meta">{formatDateTime(comment.updatedAt || comment.createdAt)}</div>
                     </div>
                   </div>

@@ -4,7 +4,8 @@
   display: grid;
   grid-template-rows: auto 1fr auto;
   gap: 2rem;
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
   padding: 1.5rem 1.2rem;
   background:
     linear-gradient(180deg, rgba(24, 53, 47, 0.98), rgba(16, 37, 32, 0.98));

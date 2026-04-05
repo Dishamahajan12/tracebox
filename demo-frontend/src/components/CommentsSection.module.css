@@ -4,6 +4,10 @@
   margin-bottom: 1rem;
 }
 
+.sortControl {
+  min-width: 220px;
+}
+
 .editArea {
   display: grid;
   gap: 0.8rem;
@@ -15,4 +19,10 @@
   line-height: 1.7;
   color: var(--text);
   white-space: pre-wrap;
+}
+
+@media (max-width: 720px) {
+  .sortControl {
+    width: 100%;
+  }
 }

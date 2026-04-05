@@ -1,0 +1,93 @@
+.shell {
+  position: relative;
+}
+
+.inputWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 16px;
+  border: 1px solid rgba(22, 53, 44, 0.14);
+  background: rgba(255, 255, 255, 0.88);
+  padding: 0 0.85rem 0 1rem;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.inputWrap:focus-within {
+  border-color: rgba(15, 118, 110, 0.42);
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+}
+
+.inputWrapError {
+  border-color: rgba(220, 38, 38, 0.35);
+}
+
+.input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  padding: 0.92rem 0;
+  outline: none;
+}
+
+.clear {
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.panel {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.45rem);
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(22, 53, 44, 0.1);
+  background: #fffdfa;
+  box-shadow: var(--shadow-md);
+}
+
+.options {
+  display: grid;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.option,
+.state {
+  padding: 0.85rem 1rem;
+}
+
+.option {
+  display: grid;
+  gap: 0.22rem;
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid rgba(22, 53, 44, 0.06);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.option:last-child {
+  border-bottom: none;
+}
+
+.option:hover {
+  background: rgba(15, 118, 110, 0.06);
+}
+
+.option strong {
+  color: var(--text);
+}
+
+.option span,
+.state {
+  color: var(--text-soft);
+  font-size: 0.92rem;
+}

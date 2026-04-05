@@ -16,6 +16,7 @@ import com.example.demo.projectmember.dto.ProjectMemberResponse;
 import com.example.demo.projectmember.dto.UpdateProjectMemberRoleRequest;
 import com.example.demo.projectmember.entity.ProjectMember;
 import com.example.demo.projectmember.entity.ProjectRole;
+import com.example.demo.projectmember.entity.ProjectTeamRole;
 import com.example.demo.projectmember.exception.DuplicateProjectMemberException;
 import com.example.demo.projectmember.exception.ProjectMemberNotFoundException;
 import com.example.demo.projectmember.repository.ProjectMemberRepository;
@@ -58,18 +59,22 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         Long currentUserId = SecurityUtils.getCurrentUserId();
         ProjectMember actorMembership = projectAuthorizationService
                 .requireProjectRole(projectId, currentUserId, ProjectRole.PROJECT_ADMIN);
+        ProjectRole accessRole = request.accessRole() == null ? ProjectRole.MEMBER : request.accessRole();
 
         if (projectMemberRepository.existsByProjectIdAndUserId(projectId, request.userId())) {
             throw new DuplicateProjectMemberException(projectId, request.userId());
         }
 
-        if (request.projectRole() == ProjectRole.PROJECT_OWNER && actorMembership.getProjectRole() != ProjectRole.PROJECT_OWNER) {
+        if (accessRole == ProjectRole.PROJECT_OWNER && actorMembership.getProjectRole() != ProjectRole.PROJECT_OWNER) {
             throw new AccessDeniedException("Only the project owner can assign the owner role");
         }
 
         Project project = projectService.getRequiredProject(projectId);
         User user = userService.getRequiredUser(request.userId());
-        ProjectMember savedMember = projectMemberRepository.save(new ProjectMember(project, user, request.projectRole()));
+        ProjectTeamRole teamRole = request.projectRole() == null
+                ? ProjectTeamRole.defaultForAccessRole(accessRole)
+                : request.projectRole();
+        ProjectMember savedMember = projectMemberRepository.save(new ProjectMember(project, user, accessRole, teamRole));
         return DtoMapper.toProjectMemberResponse(savedMember);
     }
 
@@ -82,10 +87,14 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         ProjectMember actorMembership = projectAuthorizationService
                 .requireProjectRole(projectId, currentUserId, ProjectRole.PROJECT_ADMIN);
         ProjectMember targetMembership = getRequiredMembership(projectId, userId);
+        ProjectRole newAccessRole = request.accessRole() == null ? targetMembership.getProjectRole() : request.accessRole();
 
-        validateMembershipManagement(actorMembership.getProjectRole(), targetMembership.getProjectRole(), request.projectRole());
+        validateMembershipManagement(actorMembership.getProjectRole(), targetMembership.getProjectRole(), newAccessRole);
 
-        targetMembership.setProjectRole(request.projectRole());
+        targetMembership.setProjectRole(newAccessRole);
+        targetMembership.setTeamRole(request.projectRole() == null
+                ? ProjectTeamRole.defaultForAccessRole(newAccessRole)
+                : request.projectRole());
         return DtoMapper.toProjectMemberResponse(projectMemberRepository.save(targetMembership));
     }
 

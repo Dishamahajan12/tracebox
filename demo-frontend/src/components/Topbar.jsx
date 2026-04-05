@@ -14,8 +14,12 @@ function resolveTitle(pathname) {
     return 'Project Details';
   }
 
-  if (pathname.startsWith('/tasks/')) {
-    return 'Task Details';
+  if (pathname.startsWith('/tickets/') || pathname.startsWith('/tasks/')) {
+    return 'Ticket Details';
+  }
+
+  if (pathname.startsWith('/reports/')) {
+    return 'Report Details';
   }
 
   return 'Workspace';

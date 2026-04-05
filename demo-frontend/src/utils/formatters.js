@@ -60,3 +60,38 @@ export function truncateText(value = '', maxLength = 120) {
 
   return `${value.slice(0, maxLength)}...`;
 }
+
+export function formatFileSize(sizeInBytes) {
+  if (typeof sizeInBytes !== 'number' || Number.isNaN(sizeInBytes) || sizeInBytes < 0) {
+    return 'Unknown size';
+  }
+
+  if (sizeInBytes < 1024) {
+    return `${sizeInBytes} B`;
+  }
+
+  if (sizeInBytes < 1024 * 1024) {
+    return `${(sizeInBytes / 1024).toFixed(1)} KB`;
+  }
+
+  if (sizeInBytes < 1024 * 1024 * 1024) {
+    return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  return `${(sizeInBytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
+
+export function extractFilename(value = '') {
+  if (!value) {
+    return '';
+  }
+
+  const utf8Match = value.match(/filename\*=UTF-8''([^;]+)/i);
+
+  if (utf8Match?.[1]) {
+    return decodeURIComponent(utf8Match[1]);
+  }
+
+  const filenameMatch = value.match(/filename="?([^"]+)"?/i);
+  return filenameMatch?.[1] || '';
+}

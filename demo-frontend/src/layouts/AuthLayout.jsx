@@ -14,7 +14,7 @@ function AuthLayout() {
         <div className={styles.featureList}>
           <article>
             <strong>Projects that stay readable</strong>
-            <span>Structured dashboards, role-aware controls, and fast-moving task views.</span>
+            <span>Structured dashboards, role-aware controls, and fast-moving ticket views.</span>
           </article>
           <article>
             <strong>Authentication that persists</strong>

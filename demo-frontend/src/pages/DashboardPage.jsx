@@ -9,6 +9,7 @@ import StatusBadge from '../components/ui/StatusBadge';
 import { useAuth } from '../hooks/useAuth';
 import { adminService } from '../services/adminService';
 import { projectService } from '../services/projectService';
+import { getApiErrorMessage } from '../utils/errors';
 import { formatDateTime } from '../utils/formatters';
 import { hasAdminAccess } from '../utils/permissions';
 
@@ -40,7 +41,7 @@ function DashboardPage() {
         setAdminSnapshot(adminData);
       } catch (loadError) {
         if (isMounted) {
-          setError(loadError.message || 'Unable to load dashboard data.');
+          setError(getApiErrorMessage(loadError, 'Unable to load dashboard data.'));
         }
       } finally {
         if (isMounted) {
@@ -120,9 +121,7 @@ function DashboardPage() {
                   <div className="split-row">
                     <div className="stack--sm">
                       <strong>{project.name}</strong>
-                      <span className="muted">
-                        {project.projectKey} • Created {formatDateTime(project.createdAt)}
-                      </span>
+                      <span className="muted">{`${project.projectKey} | Created ${formatDateTime(project.createdAt)}`}</span>
                     </div>
                     <div className="badge-row">
                       <StatusBadge value={project.currentUserRole} />
@@ -178,7 +177,7 @@ function DashboardPage() {
                   <strong>{adminSnapshot.activeUsers}</strong>
                 </div>
                 <div className="split-row">
-                  <span>Total tasks</span>
+                  <span>Total tickets</span>
                   <strong>{adminSnapshot.totalTasks}</strong>
                 </div>
                 <Button to="/admin" variant="ghost">
@@ -197,7 +196,7 @@ function DashboardPage() {
               <div className="stack">
                 <span className="pill-note">Owner: full project control</span>
                 <span className="pill-note">Project Admin: member and project settings access</span>
-                <span className="pill-note">Member: task creation and editing</span>
+                <span className="pill-note">Member: ticket creation and editing</span>
                 <span className="pill-note">Viewer: read-only project access</span>
               </div>
             </div>

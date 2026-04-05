@@ -6,6 +6,7 @@ import StatusBadge from '../components/ui/StatusBadge';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { userService } from '../services/userService';
+import { getApiErrorMessage } from '../utils/errors';
 import { formatDateTime } from '../utils/formatters';
 
 function ProfilePage() {
@@ -36,8 +37,9 @@ function ProfilePage() {
       syncCurrentUser(updatedUser);
       showSuccess('Profile updated', 'Your account details were saved successfully.');
     } catch (submitError) {
-      setError(submitError.message || 'Unable to update your profile.');
-      showError('Profile update failed', submitError.message || 'Please try again.');
+      const message = getApiErrorMessage(submitError, 'Unable to update your profile.');
+      setError(message);
+      showError('Profile update failed', message);
     } finally {
       setSaving(false);
     }

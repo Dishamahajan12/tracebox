@@ -70,7 +70,7 @@ function AdminDashboardPage() {
             <StatCard detail="Registered accounts in the workspace" label="Total Users" value={dashboard.totalUsers} />
             <StatCard accent="highlight" detail="Accounts currently marked active" label="Active Users" value={dashboard.activeUsers} />
             <StatCard detail="Project spaces across the instance" label="Total Projects" value={dashboard.totalProjects} />
-            <StatCard detail="Tasks currently stored" label="Total Tasks" value={dashboard.totalTasks} />
+            <StatCard detail="Tickets currently stored" label="Total Tickets" value={dashboard.totalTasks} />
           </section>
 
           <section className="detail-grid">
@@ -87,7 +87,7 @@ function AdminDashboardPage() {
                   <strong>{dashboard.totalComments}</strong>
                 </div>
                 <div className="split-row">
-                  <span>Average tasks per project</span>
+                  <span>Average tickets per project</span>
                   <strong>
                     {dashboard.totalProjects ? Math.round(dashboard.totalTasks / dashboard.totalProjects) : 0}
                   </strong>

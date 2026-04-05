@@ -1,0 +1,88 @@
+.workspaceSection {
+  display: grid;
+  gap: 1rem;
+}
+
+.workspaceTabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+}
+
+.workspaceTab {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.25rem;
+  text-align: left;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(15, 118, 110, 0.12);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(243, 239, 229, 0.95));
+  box-shadow: var(--shadow-md);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.workspaceTab:hover {
+  transform: translateY(-2px);
+  border-color: rgba(15, 118, 110, 0.22);
+  box-shadow: 0 18px 28px rgba(15, 32, 28, 0.12);
+}
+
+.workspaceTabActive {
+  border-color: rgba(15, 118, 110, 0.34);
+  background:
+    radial-gradient(circle at top right, rgba(245, 158, 11, 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(15, 118, 110, 0.12), rgba(255, 255, 255, 0.97));
+  box-shadow: 0 18px 32px rgba(15, 118, 110, 0.14);
+}
+
+.workspaceLabel {
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+  font-size: 1.08rem;
+  font-weight: 700;
+}
+
+.workspaceDescription {
+  color: var(--text-soft);
+  line-height: 1.5;
+}
+
+.workspaceTabActive .workspaceDescription {
+  color: #28544b;
+}
+
+.workspaceTabFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.workspaceAction {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.workspaceTabActive .workspaceAction {
+  color: var(--primary-strong);
+}
+
+.workspacePanel {
+  animation: workspacePanelEnter 180ms ease-out;
+}
+
+@keyframes workspacePanelEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -4,26 +4,26 @@ import EmptyState from './ui/EmptyState';
 import InputField from './ui/InputField';
 import SelectField from './ui/SelectField';
 import StatusBadge from './ui/StatusBadge';
+import UserProfileTrigger from './UserProfileTrigger';
 import { useFormFields } from '../hooks/useFormFields';
 import {
   PROJECT_ASSIGNABLE_ROLE_OPTIONS,
   PROJECT_MANAGEABLE_ROLE_OPTIONS,
-  PROJECT_OWNER_ROLE_OPTIONS,
 } from '../utils/constants';
 import { formatDateTime, humanizeEnum, initialsFromName } from '../utils/formatters';
-import { canManageProjectMembers, canTransferProjectOwnership } from '../utils/permissions';
+import { canManageProjectMembers, isProjectAccessRole } from '../utils/permissions';
 import styles from './ProjectMembersSection.module.css';
 
 function ProjectMembersSection({ members, currentUser, projectRole, onAddMember, onUpdateMemberRole, onRemoveMember }) {
   const canManageMembers = canManageProjectMembers(projectRole);
-  const canTransferOwnership = canTransferProjectOwnership(projectRole);
+  const hasAccessRoleColumn = members.some((member) => member.accessRole || isProjectAccessRole(member.projectRole));
   const [draftRoles, setDraftRoles] = useState({});
   const [addingMember, setAddingMember] = useState(false);
   const [busyUserId, setBusyUserId] = useState(null);
   const [submitError, setSubmitError] = useState('');
   const { values, updateField, resetForm } = useFormFields({
     userId: '',
-    projectRole: 'MEMBER',
+    projectRole: 'DEVELOPER',
   });
 
   async function handleAddMember(event) {
@@ -43,7 +43,7 @@ function ProjectMembersSection({ members, currentUser, projectRole, onAddMember,
       });
       resetForm({
         userId: '',
-        projectRole: 'MEMBER',
+        projectRole: 'DEVELOPER',
       });
     } catch (error) {
       setSubmitError(error.message);
@@ -98,7 +98,7 @@ function ProjectMembersSection({ members, currentUser, projectRole, onAddMember,
       <div className="section-header">
         <div>
           <h2>Project Members</h2>
-          <p>Manage project access by role. Viewers stay read-only while admins and owners can coordinate the team.</p>
+          <p>Keep project teammates aligned with business-facing project roles while access permissions stay enforced behind the scenes.</p>
         </div>
         <span className="pill-note">Your access: {humanizeEnum(projectRole)}</span>
       </div>
@@ -115,7 +115,7 @@ function ProjectMembersSection({ members, currentUser, projectRole, onAddMember,
             value={values.userId}
           />
           <SelectField
-            label="Project role"
+            label="Project Role"
             name="projectRole"
             onChange={updateField}
             options={PROJECT_ASSIGNABLE_ROLE_OPTIONS.map((role) => ({
@@ -131,7 +131,7 @@ function ProjectMembersSection({ members, currentUser, projectRole, onAddMember,
           </div>
         </form>
       ) : (
-        <div className="inline-message">Viewers and members can browse the roster, but only project admins and owners can change it.</div>
+        <div className="inline-message">Viewers and members can browse the roster, but only project admins and owners can update teammate roles.</div>
       )}
 
       {submitError ? <div className="inline-message inline-message--error">{submitError}</div> : null}
@@ -141,7 +141,8 @@ function ProjectMembersSection({ members, currentUser, projectRole, onAddMember,
           <thead>
             <tr>
               <th>Member</th>
-              <th>Current Role</th>
+              <th>Project Role</th>
+              {hasAccessRoleColumn ? <th>Access Role</th> : null}
               <th>Added</th>
               <th>Role Update</th>
               <th>Actions</th>
@@ -150,16 +151,16 @@ function ProjectMembersSection({ members, currentUser, projectRole, onAddMember,
           <tbody>
             {members.map((member) => {
               const isCurrentUser = member.user.id === currentUser?.id;
+              const accessRole =
+                member.accessRole || (isProjectAccessRole(member.projectRole) ? member.projectRole : null);
               const disableManagement =
                 !canManageMembers ||
-                member.projectRole === 'PROJECT_OWNER' ||
-                (projectRole === 'PROJECT_ADMIN' && (member.projectRole === 'PROJECT_ADMIN' || isCurrentUser));
-              const roleOptions = (canTransferOwnership ? PROJECT_OWNER_ROLE_OPTIONS : PROJECT_MANAGEABLE_ROLE_OPTIONS).map(
-                (role) => ({
-                  label: humanizeEnum(role),
-                  value: role,
-                }),
-              );
+                accessRole === 'PROJECT_OWNER' ||
+                (projectRole === 'PROJECT_ADMIN' && (accessRole === 'PROJECT_ADMIN' || isCurrentUser));
+              const roleOptions = PROJECT_MANAGEABLE_ROLE_OPTIONS.map((role) => ({
+                label: humanizeEnum(role),
+                value: role,
+              }));
 
               return (
                 <tr key={member.id}>
@@ -167,7 +168,7 @@ function ProjectMembersSection({ members, currentUser, projectRole, onAddMember,
                     <div className="media-row">
                       <span className="avatar-chip">{initialsFromName(member.user.fullName)}</span>
                       <div>
-                        <strong>{member.user.fullName}</strong>
+                        <UserProfileTrigger user={member.user}>{member.user.fullName}</UserProfileTrigger>
                         <div className="member-meta">{member.user.email}</div>
                       </div>
                     </div>
@@ -175,6 +176,7 @@ function ProjectMembersSection({ members, currentUser, projectRole, onAddMember,
                   <td>
                     <StatusBadge value={member.projectRole} />
                   </td>
+                  {hasAccessRoleColumn ? <td>{accessRole ? <StatusBadge value={accessRole} /> : 'Not set'}</td> : null}
                   <td>{formatDateTime(member.createdAt)}</td>
                   <td>
                     <SelectField
